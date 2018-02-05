@@ -105,17 +105,22 @@ if (isDarwin) {
     'python tools/signature_generator.py --input_file "' + wvBundle + '" --output_file "' + wvBundleSig + '" --flag 1',
     'python tools/signature_generator.py --input_file "' + wvPlugin + '"',
 
-    // Sign it
+    // Sign it (requires Apple 'Developer ID Application' certificate installed in keychain)
     'cd ' + buildDir + `/${appName}.app/Contents/Frameworks`,
     'codesign --deep --force --strict --verbose --sign $IDENTIFIER *',
     'cd ../../..',
     `codesign --deep --force --strict --verbose --sign $IDENTIFIER ${appName}.app/`,
 
-    // Package it into a dmg or package
+    // Package it into a dmg and/or package
     'cd ..',
     'build ' +
-      '--prepackaged="' + buildDir + `/${appName}.app" ` +
-      ` --config=res/${channel}/builderConfig.json `,
+      `--prepackaged="${buildDir}/${appName}.app" ` +
+      `--config=res/${channel}/builderConfig.json `,
+
+    // sign pkg (requires Apple 'Developer ID Installer' certificate installed in keychain)
+    `mv dist/${appName}-${VersionInfo.braveVersion}.pkg dist/${appName}-${VersionInfo.braveVersion}_unsigned.pkg`,
+    `productsign --sign ${identifier} dist/${appName}-${VersionInfo.braveVersion}_unsigned.pkg dist/${appName}-${VersionInfo.braveVersion}.pkg`,
+    `rm dist/${appName}-${VersionInfo.braveVersion}_unsigned.pkg`,
 
     // Create an update zip
     'ditto -c -k --sequesterRsrc --keepParent ' + buildDir + `/${appName}.app dist/${appName}-` + VersionInfo.braveVersion + '.zip'
